@@ -1,0 +1,39 @@
+{
+    "name": "lampminds/filament",
+    "description": "Standard settings for Filament used by Lampminds",
+    "require": {
+        "php": "^8.2",
+        "filament/filament": "^3.2",
+        "illuminate/database": "^11.0|^12.0",
+        "illuminate/filesystem": "^11.0|^21.0",
+        "illuminate/support": "^11.0|^12.0"
+    },
+    "license": "MIT",
+    "autoload": {
+        "psr-4": {
+            "Lampminds\\Filament\\": "src/"
+        },
+        "files": [
+            "app/Helpers/helpers-common.php",
+            "app/Helpers/helpers-log.php",
+            "app/Helpers/helpers-parameters.php",
+            "app/Helpers/helpers-useragent.php"
+        ]
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Lampminds\\Filament\\LmpFilamentServiceProvider"
+            ]
+        }
+    },
+    "authors": [
+        {
+            "name": "Lahuen Millañanco",
+            "email": "lahuenesc@gmail.com",
+            "homepage": "https://lampminds.com"
+        }
+    ],
+    "minimum-stability": "dev",
+    "prefer-stable": true
+}
