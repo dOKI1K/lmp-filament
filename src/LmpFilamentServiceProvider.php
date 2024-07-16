@@ -1,5 +1,7 @@
 <?php
 
+namespace Lampminds\Filament;
+
 use Illuminate\Support\ServiceProvider;
 
 class LmpFilamentServiceProvider extends ServiceProvider
