@@ -68,6 +68,12 @@ function diffForHumansNotNull($date)
     return $date ? $date->diffForHumans() : '';
 }
 
+function ssFileExtensionIsVisual($file)
+{
+    $ext = strtolower(pathinfo($file, PATHINFO_EXTENSION));
+    return stripos(',' . getParameterValue('thumbnail_enabled_extensions'), $ext);
+}
+
 function when(Carbon $date, $show_date_too = false)
 {
     return $date->diffForHumans()
@@ -161,6 +167,12 @@ function human_count($count)
     }
 }
 
+function getDateFrom($date)
+{
+    $format = getParameterValue('date_format') ?? 'd/m/Y';
+    return $date ? Carbon::createFromFormat('Y-m-d H:i:s', $date)->format($format) : '';
+}
+
 function getCurrentAccountName()
 {
     return auth()->check() ? Auth::user()->account->name : config('app.name');
@@ -178,4 +190,15 @@ function formatPhoneMask($phone, $parameter)
     }
     $mask = implode('', $mask);
     return $mask;
+}
+
+function formatTime12()
+{
+    $parameter = getParameterValue('TIME_FORMAT', 'h:ia');
+
+    if ($parameter == 'Y') {
+        return 'H:i';
+    } else {
+        return $parameter;
+    }
 }

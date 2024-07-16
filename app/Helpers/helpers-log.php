@@ -21,19 +21,16 @@ function ssLog(string $type, string $code, string $message)
     $type = (strtolower($type) ?: 'undefined');
     $code = strtolower($code);
 
-    // if (!array_key_exists($code, $flags)) {
-    //     // we store it statically for better performance
-    //     $param = getParameter('log_'.$code.'_activity');
-    //     if ($param) {
-    //         $flags[$code] = ($param->value != 'N' ? true:false);
-    //         $channels[$code] = Str::lower($param->auxiliary) ?? 'general';
-    //     } else {
-    //         // cannot find what to do? Then we log it
-    //         $flags[$code] = true;
-    //         $channels[$code] = 'general';
-    //     }
-
-    // }
+    if (!array_key_exists($code, $flags)) {
+        $param = getParameter('log_' . $code . '_activity');
+        if ($param) {
+            $flags[$code] = ($param->value != 'N' ? true : false);
+            $channels[$code] = Str::lower($param->auxiliary) ?? 'general';
+        } else {
+            $flags[$code] = true;
+            $channels[$code] = 'general';
+        }
+    }
     $user = Auth::check() ? Auth::user()->nickname : 'job';
 
     if (strpos('|error|critical|alert|emergency', $type) || $flags[$code]) {
