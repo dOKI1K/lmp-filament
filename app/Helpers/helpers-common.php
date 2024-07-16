@@ -1,11 +1,7 @@
 <?php
 
-use App\Models\User;
+use Illuminate\Foundation\Auth\User;
 use Illuminate\Support\Str;
-////////////////////////////////////
-use App\Models\Config;
-use App\Models\Parameter;
-use App\Models\Proposal;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
@@ -23,30 +19,25 @@ function nickname($user_id)
 {
     static $cache = [];
 
-    if(in_array($user_id, $cache)) {
-        $ret = $cache[$user_id];
-    } else {
-        if ($user = User::where('id', $user_id)->first()) {
-            $aux = explode(' ', $user->name);
-            switch(count($aux)) {
-                case 0:
-                    $ret = $user->name;
-                    break;
-                case 1:
-                    $ret = Str::ucfirst($aux[0]);
-                    break;
-                case 2:
-                    $ret = Str::ucfirst($aux[0]).'-'.Str::ucfirst($aux[1][0]);
-                    break;
-                default:
-                    $ret = Str::ucfirst($aux[0]).'-'.Str::ucfirst($aux[2][0]);
-            }
-            $cache[$user_id] = $ret;
-        } else {
-            $ret = 'n/a';
+    if (!in_array($user_id, $cache)) {
+        if (!$user = User::where('id', $user_id)->first()) {
+            return 'n/a';
+        }
+
+        $aux = explode(' ', $user->name);
+        switch (count($aux)) {
+            case 0:
+                return $user->name;
+            case 1:
+                return Str::ucfirst($aux[0]);
+            case 2:
+                return Str::ucfirst($aux[0]) . '-' . Str::ucfirst($aux[1][0]);
+            default:
+                return Str::ucfirst($aux[0]) . '-' . Str::ucfirst($aux[2][0]);
         }
     }
-    return $ret;
+
+    return $cache[$user_id];
 }
 
 /**
@@ -77,72 +68,15 @@ function diffForHumansNotNull($date)
     return $date ? $date->diffForHumans() : '';
 }
 
-function ssFileExtensionIsVisual($file)
-{
-    $ext = strtolower(pathinfo($file, PATHINFO_EXTENSION));
-    return stripos(','.getParameterValue('thumbnail_enabled_extensions'), $ext);
-}
-
-/**
- * Returns the last proposal number of the same account_id
- * If there are no proposals, it returns 0.
- * If there are proposals, it returns the last proposal number + 1.
- *
- * @return int
- */
-
-function getLastProposalNumberPlusOne()
-{
-    $lastProposal = Proposal::where('account_id', auth()->user()->account_id)->orderBy('proposal_number', 'desc')->get()->first();
-
-    if (strpos($lastProposal->proposal_number, '(') !== false) {
-        $lastProposal->proposal_number = substr($lastProposal->proposal_number, 0, strpos($lastProposal->proposal_number, '('));
-    }
-
-    if ($lastProposal) {
-        return $lastProposal->proposal_number + 1;
-    } else {
-        return 0;
-    }
-}
-
-/**
- * Returns the proposal number with a copy number in parenthesis
- * If there are no proposals, it returns the proposal number.
- * If there are proposals, it returns the proposal number + (number of replicas).
- *
- * @param $proposal_number
- * @return string
- */
-
-
-function getProposalNumberCopy($proposal_number)
-{
-    if (strpos($proposal_number, '(') !== false) {
-        $num = substr($proposal_number, strpos($proposal_number, '(') + 1, -1);
-        $proposal_number = substr($proposal_number, 0, strpos($proposal_number, '('));
-
-        if ($num) {
-            $i = $num + 1;
-        } else {
-            $i = 1;
-        }
-
-        return $proposal_number . '(' . $i . ')';
-    } else {
-        return $proposal_number . '(2)';
-    }
-}
-
 function when(Carbon $date, $show_date_too = false)
 {
     return $date->diffForHumans()
-        .($show_date_too ? ' ('.$date->format('d/m/Y').')' : '');
+        . ($show_date_too ? ' (' . $date->format('d/m/Y') . ')' : '');
 }
 
 function whoAndWhen($user_id, Carbon $date, $show_date_too = false)
 {
-    return nickname($user_id).', '.when($date, $show_date_too);
+    return nickname($user_id) . ', ' . when($date, $show_date_too);
 }
 
 
@@ -161,7 +95,7 @@ function cidr2range($cidr, $return_as_ip = false): array
         return [null, null];
     }
     $range_start = ip2long($cidr[0]);
-    $range_end = $range_start + pow(2, 32-intval($cidr[1])) - 1;
+    $range_end = $range_start + pow(2, 32 - intval($cidr[1])) - 1;
     return $return_as_ip
         ? [long2ip($range_start), long2ip($range_end)]
         : [$range_start, $range_end];
@@ -202,12 +136,12 @@ function human_filesize($bytes, $decimals = 2)
 // get real connection and table name based on a model
 function getConnectionAndTable($model)
 {
-    if($model) {
+    if ($model) {
         $table = $model->getTable();
         $connection = $model->getConnectionName();
         return ($connection
-                ? config('database.connections.'.$connection.'.database').'.':'')
-            .$table;
+            ? config('database.connections.' . $connection . '.database') . '.' : '')
+            . $table;
     } else {
         return null;
     }
@@ -227,17 +161,9 @@ function human_count($count)
     }
 }
 
-//get date from database and return it in the format of the configuration
-function getDateFrom($date)
-{
-    // $format = Parameter::where('code', 'date_format')->where('account_id', Auth::user()->account_id)->first()->value ?? 'd/m/Y';
-    $format = getParameterValue('date_format') ?? 'd/m/Y';
-    return $date ? Carbon::createFromFormat('Y-m-d H:i:s', $date)->format($format) : '';
-}
-
 function getCurrentAccountName()
 {
-    return auth()->check() ? Auth::user()->account->name:config('app.name');
+    return auth()->check() ? Auth::user()->account->name : config('app.name');
 }
 
 function formatPhoneMask($phone, $parameter)
@@ -252,15 +178,4 @@ function formatPhoneMask($phone, $parameter)
     }
     $mask = implode('', $mask);
     return $mask;
-}
-
-function formatTime12()
-{
-    $parameter = getParameterValue('TIME_FORMAT', 'h:ia');
-
-    if ($parameter == 'Y') {
-        return 'H:i';
-    } else {
-        return $parameter;
-    }
 }
