@@ -11,12 +11,14 @@ use Filament\Support\Commands\Concerns\CanReadModelSchemas;
 use Filament\Tables\Commands\Concerns\CanGenerateTables;
 use Illuminate\Console\Command;
 use Illuminate\Console\GeneratorCommand;
+use Illuminate\Filesystem\Filesystem;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Str;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
+use ReflectionClass;
 
 use function Laravel\Prompts\select;
 use function Laravel\Prompts\text;
@@ -29,7 +31,7 @@ class FilamodelCommand extends Command
      *
      * @var string
      */
-    protected $signature = 'make:lampminds-filamodel {name?} {--panel=} {--nolmp}';
+    protected $signature = 'make:lampminds-filamodel {name?} {--panel} {--nolmp} {--all} {--controller} {--factory} {--migration} {--seed}';
 
     /**
      * The console command description.
@@ -57,10 +59,6 @@ class FilamodelCommand extends Command
      */
     public function handle()
     {
-        if (parent::handle() === false && !$this->option('force')) {
-            return false;
-        }
-
         if ($this->option('all')) {
             $this->input->setOption('factory', true);
             $this->input->setOption('seed', true);
@@ -80,7 +78,7 @@ class FilamodelCommand extends Command
             $this->createSeeder();
         }
 
-        if ($this->option('controller') || $this->option('resource') || $this->option('api')) {
+        if ($this->option('controller')) {
             $this->createController();
         }
 
@@ -136,15 +134,10 @@ class FilamodelCommand extends Command
             )] : Arr::first($panels);
         }
 
-        $resourceDirectories = $panel->getResourceDirectories();
-        $resourceNamespaces = $panel->getResourceNamespaces();
-        $namespace = (count($resourceNamespaces) > 1) ?
-            select(
-                label: 'Which namespace would you like to create this in?',
-                options: $resourceNamespaces
-            ) : (Arr::first($resourceNamespaces) ?? 'App\\Filament\\Resources');
-        $path = (count($resourceDirectories) > 1) ?
-            $resourceDirectories[array_search($namespace, $resourceNamespaces)] : (Arr::first($resourceDirectories) ?? app_path('Filament/Resources/'));
+        $resourceDirectories = null;
+        $resourceNamespaces = null;
+        $namespace = 'App\\Filament\\Resources';
+        $path = app_path('Filament/Resources/');
 
         $resource = "{$model}Resource";
         $resourceClass = "{$modelClass}Resource";
@@ -171,16 +164,16 @@ class FilamodelCommand extends Command
         $editResourcePagePath = "{$resourcePagesDirectory}/{$editResourcePageClass}.php";
         $viewResourcePagePath = "{$resourcePagesDirectory}/{$viewResourcePageClass}.php";
 
-        if (!$this->option('force') && $this->checkForCollision([
-            $resourcePath,
-            $listResourcePagePath,
-            $manageResourcePagePath,
-            $createResourcePagePath,
-            $editResourcePagePath,
-            $viewResourcePagePath,
-        ])) {
-            return static::INVALID;
-        }
+        // if ($this->checkForCollision([
+        //     $resourcePath,
+        //     $listResourcePagePath,
+        //     $manageResourcePagePath,
+        //     $createResourcePagePath,
+        //     $editResourcePagePath,
+        //     $viewResourcePagePath,
+        // ])) {
+        //     return static::INVALID;
+        // }
 
         $pages = '';
         $pages .= '\'index\' => Pages\\{$listResourcePageClass}::route(\'/\'),';
@@ -266,6 +259,63 @@ class FilamodelCommand extends Command
         $this->components->info("Filament resource [{$resourcePath}] created successfully.");
 
         return static::SUCCESS;
+    }
+
+    protected function indentString(string $string, int $level = 1): string
+    {
+        return implode(
+            PHP_EOL,
+            array_map(
+                fn (string $line) => ($line !== '') ? (str_repeat('    ', $level) . "{$line}") : '',
+                explode(PHP_EOL, $string),
+            ),
+        );
+    }
+
+    protected function getDefaultStubPath(): string
+    {
+        $reflectionClass = new ReflectionClass($this);
+
+        return (string) str($reflectionClass->getFileName())
+            ->beforeLast('Commands')
+            ->append('../../support/stubs');
+    }
+
+    protected function fileExists(string $path): bool
+    {
+        $filesystem = app(Filesystem::class);
+
+        return $filesystem->exists($path);
+    }
+
+    protected function writeFile(string $path, string $contents): void
+    {
+        $filesystem = app(Filesystem::class);
+
+        $filesystem->ensureDirectoryExists(
+            pathinfo($path, PATHINFO_DIRNAME),
+        );
+
+        $filesystem->put($path, $contents);
+    }
+
+    protected function copyStubToApp(string $stub, string $targetPath, array $replacements = []): void
+    {
+        $filesystem = app(Filesystem::class);
+
+        if (!$this->fileExists($stubPath = base_path("stubs/filament/{$stub}.stub"))) {
+            $stubPath = $this->getDefaultStubPath() . "/{$stub}.stub";
+        }
+
+        $stub = str($filesystem->get($stubPath));
+
+        foreach ($replacements as $key => $replacement) {
+            $stub = $stub->replace("{{ {$key} }}", $replacement);
+        }
+
+        $stub = (string) $stub;
+
+        $this->writeFile($targetPath, $stub);
     }
 
     protected function createFactory()
