@@ -59,28 +59,13 @@ class FilamodelCommand extends Command
      */
     public function handle()
     {
-        if ($this->option('all')) {
-            $this->input->setOption('factory', true);
-            $this->input->setOption('seed', true);
-            $this->input->setOption('migration', true);
-            $this->input->setOption('controller', true);
-        }
-
-        if ($this->option('factory')) {
-            $this->createFactory();
-        }
-
-        if ($this->option('migration')) {
-            $this->createMigration();
-        }
-
-        if ($this->option('seed')) {
-            $this->createSeeder();
-        }
-
-        if ($this->option('controller')) {
-            $this->createController();
-        }
+        $this->call('make:model', [
+            'name' => $this->argument('name'),
+            '--factory' => true,
+            '--migration' => true,
+            '--seed' => true,
+            '--controller' => true,
+        ]);
 
         $model = (string) str($this->argument('name') ?? text(
             label: 'What is the model name?',
@@ -224,7 +209,7 @@ class FilamodelCommand extends Command
         ]);
 
         $this->copyStubToApp('ResourcePage', $createResourcePagePath, [
-            'baseResourcePage' => 'Filament\\Lampminds\\Resources\\LmpCreateRecord',
+            'baseResourcePage' => 'App\\Filament\\Lampminds\\Resources\\LmpCreateRecord',
             'baseResourcePageClass' => $hasLampminds ? 'LmpCreateRecord' : 'CreateRecord',
             'namespace' => "{$namespace}\\{$resourceClass}\\Pages",
             'resource' => "{$namespace}\\{$resourceClass}",
@@ -247,7 +232,7 @@ class FilamodelCommand extends Command
         $editPageActions = implode(PHP_EOL, $editPageActions);
 
         $this->copyStubToApp('ResourceEditPage', $editResourcePagePath, [
-            'baseResourcePage' => 'Filament\\Lampminds\\Resources\\LmpEditRecord',
+            'baseResourcePage' => 'App\\Filament\\Lampminds\\Resources\\LmpEditRecord',
             'baseResourcePageClass' => $hasLampminds ? 'LmpEditRecord' : 'EditRecord',
             'actions' => $this->indentString($editPageActions, 3),
             'namespace' => "{$namespace}\\{$resourceClass}\\Pages",
@@ -278,7 +263,7 @@ class FilamodelCommand extends Command
 
         return (string) str($reflectionClass->getFileName())
             ->beforeLast('Commands')
-            ->append('../../support/stubs');
+            ->append('Commands\stubs');
     }
 
     protected function fileExists(string $path): bool
