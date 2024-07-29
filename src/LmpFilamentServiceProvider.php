@@ -25,7 +25,7 @@ class LmpFilamentServiceProvider extends ServiceProvider
         if (empty(glob(app_path('Console/Commands/*')))) {
             $this->publishes([
                 __DIR__ . '/../app/Console/Commands/Filamodel.php' => app_path('Console/Commands/Filamodel.php'),
-                __DIR__ . '/../app/Console/Commands/stubs/Resources.stub' => app_path('Console/Commands/stubs/Resource.stub'),
+                __DIR__ . '/../app/Console/Commands/stubs/Resource.stub' => app_path('Console/Commands/stubs/Resource.stub'),
             ], 'commands');
         }
 

@@ -29,7 +29,7 @@ class FilamodelCommand extends Command
      *
      * @var string
      */
-    protected $signature = 'lampminds:filamodel {name?} {--panel=} {--nolmp}';
+    protected $signature = 'make:lampminds-filamodel {name?} {--panel=} {--nolmp}';
 
     /**
      * The console command description.
